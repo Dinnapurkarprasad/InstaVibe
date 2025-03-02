@@ -15,8 +15,11 @@ async function Sidebar() {
     if(!authUser) return <UnAuthneticatedSidebar/>
 
     const user=await getUserByClerkId(authUser.id)
-    
+
     if(!user) return null
+
+
+    // vsvm;slvmslvmvlmsvdl;sLVms;vmsv';smdvsdv
 
 
     return (
