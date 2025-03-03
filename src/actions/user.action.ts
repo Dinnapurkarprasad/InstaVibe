@@ -57,7 +57,7 @@ export async function getUserByClerkId(clerkId: string) {
 export async function getDbUserId() {
 
     const { userId: clerkId } = await auth()
-    if (!clerkId) throw new Error("Unauthorized");
+    if (!clerkId) return null
 
     const user = await getUserByClerkId(clerkId)
 
@@ -69,6 +69,7 @@ export async function getDbUserId() {
 export async function getRandomUser() {
     try {
         const userId = await getDbUserId()
+        if(!userId) return[];
 
         //get the 5 random user ignore ourselves and the user who we follwed alredy
         const randomUsers = await prisma.user.findMany({
@@ -101,6 +102,8 @@ export async function getRandomUser() {
 export async function toggleFollow(targetUserId: string) {
     try {
         const userId = await getDbUserId();
+        if(!userId) return;
+        
         if (userId === targetUserId) throw new Error("You can not follow yourself")
 
         const existingFollow = await prisma.follows.findUnique({
@@ -137,4 +140,27 @@ export async function toggleFollow(targetUserId: string) {
     }
 }
 
-
+export async function deletePost(postId: string) {
+    try {
+      const userId = await getDbUserId();
+  
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+        select: { authorId: true },
+      });
+  
+      if (!post) throw new Error("Post not found");
+      if (post.authorId !== userId) throw new Error("Unauthorized - no delete permission");
+  
+      await prisma.post.delete({
+        where: { id: postId },
+      });
+  
+      revalidatePath("/");
+      return { success: true };
+      
+    } catch (error) {
+      console.error("Failed to delete post:", error);
+      return { success: false, error: "Failed to delete post" };
+    }
+  }
